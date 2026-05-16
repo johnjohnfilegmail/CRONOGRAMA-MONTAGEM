@@ -106,37 +106,63 @@
         }
 
         .task {
-            display: grid;
-            grid-template-columns: 32px 1fr 26px;
-            grid-template-rows: auto auto;
-            gap: 4px 6px;
-            align-items: start;
-            padding: 7px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            padding: 6px 7px;
             background: #ffffff;
             border: 1px solid var(--border);
             border-radius: 10px;
         }
 
+        .task-row {
+            display: flex;
+            align-items: flex-start;
+            gap: 4px;
+        }
+
         .task-controls {
             display: flex;
-            flex-direction: column;
-            gap: 4px;
+            flex-direction: row;
+            gap: 3px;
             align-items: center;
         }
 
         .responsavel {
-            width: 30px;
-            height: 24px;
+            width: 18px;
+            height: 16px;
             padding: 0;
             border: 1px solid var(--border);
-            border-radius: 6px;
+            border-radius: 4px;
             background: #f7fafc;
             cursor: pointer;
-            font-size: 0.7rem;
+            font-size: 0.55rem;
             font-weight: 800;
             text-align: center;
             color: var(--text);
             appearance: none;
+        }
+
+        .resp-A { color: #3182ce; }
+        .resp-T { color: #e53e3e; }
+        .resp-M { color: #805ad5; }
+        .resp-J { color: #dd6b20; }
+
+        .horario {
+            width: 22px;
+            height: 16px;
+            padding: 0 1px;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            background: #f7fafc;
+            font-size: 0.5rem;
+            text-align: center;
+            color: var(--text);
+            outline: none;
+        }
+
+        .horario:focus {
+            border-color: var(--primary);
         }
 
         .task-text {
@@ -150,27 +176,28 @@
         }
 
         .status {
-            width: 30px;
-            height: 28px;
+            width: 18px;
+            height: 16px;
             padding: 0;
             border: none;
-            border-radius: 8px;
+            border-radius: 4px;
             background: #f7fafc;
             cursor: pointer;
-            font-size: 1rem;
+            font-size: 0.55rem;
             text-align: center;
             appearance: none;
         }
 
         .delete {
-            width: 24px;
-            height: 24px;
+            width: 18px;
+            height: 18px;
             border: none;
             background: transparent;
             color: var(--danger);
-            border-radius: 7px;
+            border-radius: 4px;
             cursor: pointer;
-            font-size: 0.85rem;
+            font-size: 0.7rem;
+            flex-shrink: 0;
         }
 
         .delete:hover {
@@ -293,22 +320,26 @@
 
                 const tarefas = dia.tarefas.map((tarefa, tarefaIdx) => `
                     <article class="task">
+                        <div class="task-row">
+                            <div class="task-text" contenteditable="true" onblur="atualizarTarefa(${diaIdx}, ${tarefaIdx}, this.innerText)">${escapar(tarefa.tarefa)}</div>
+                            <button class="delete" type="button" onclick="deletarTarefa(${diaIdx}, ${tarefaIdx})">×</button>
+                        </div>
                         <div class="task-controls">
                             <select class="status" onchange="atualizarStatus(${diaIdx}, ${tarefaIdx}, this.value)" title="Status">
-                                <option value="pendente" ${tarefa.status === 'pendente' ? 'selected' : ''}>🔴</option>
+                                <option value="pendente" ${tarefa.status === 'pendente' ? 'selected' : ''}>⚪</option>
+                                <option value="urgente" ${tarefa.status === 'urgente' ? 'selected' : ''}>🔴</option>
                                 <option value="andamento" ${tarefa.status === 'andamento' ? 'selected' : ''}>🟡</option>
                                 <option value="concluido" ${tarefa.status === 'concluido' ? 'selected' : ''}>🟢</option>
                             </select>
-                            <select class="responsavel" onchange="atualizarResponsavel(${diaIdx}, ${tarefaIdx}, this.value)" title="Responsável">
+                            <select class="responsavel resp-${tarefa.responsavel || ''}" onchange="atualizarResponsavel(${diaIdx}, ${tarefaIdx}, this)" title="Responsável">
                                 <option value="" ${!tarefa.responsavel ? 'selected' : ''}>-</option>
                                 <option value="A" ${tarefa.responsavel === 'A' ? 'selected' : ''}>A</option>
                                 <option value="T" ${tarefa.responsavel === 'T' ? 'selected' : ''}>T</option>
                                 <option value="M" ${tarefa.responsavel === 'M' ? 'selected' : ''}>M</option>
                                 <option value="J" ${tarefa.responsavel === 'J' ? 'selected' : ''}>J</option>
                             </select>
+                            <input class="horario" type="text" value="${escapar(tarefa.horario || '')}" onblur="atualizarHorario(${diaIdx}, ${tarefaIdx}, this.value)" placeholder="h" maxlength="5" title="Horário">
                         </div>
-                        <div class="task-text" contenteditable="true" onblur="atualizarTarefa(${diaIdx}, ${tarefaIdx}, this.innerText)">${escapar(tarefa.tarefa)}</div>
-                        <button class="delete" type="button" onclick="deletarTarefa(${diaIdx}, ${tarefaIdx})">×</button>
                     </article>
                 `).join('');
 
@@ -348,13 +379,20 @@
             salvar();
         }
 
-        function atualizarResponsavel(diaIdx, tarefaIdx, valor) {
+        function atualizarResponsavel(diaIdx, tarefaIdx, selectEl) {
+            const valor = selectEl.value;
             dados[diaIdx].tarefas[tarefaIdx].responsavel = valor;
+            selectEl.className = 'responsavel resp-' + valor;
+            salvar();
+        }
+
+        function atualizarHorario(diaIdx, tarefaIdx, valor) {
+            dados[diaIdx].tarefas[tarefaIdx].horario = valor.trim();
             salvar();
         }
 
         function adicionarTarefa(diaIdx) {
-            dados[diaIdx].tarefas.push({ tarefa: 'Nova tarefa', status: 'pendente', responsavel: '' });
+            dados[diaIdx].tarefas.push({ tarefa: 'Nova tarefa', status: 'pendente', responsavel: '', horario: '' });
             salvar();
             renderizar();
         }
