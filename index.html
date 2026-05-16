@@ -30,11 +30,10 @@
         header {
             display: flex;
             align-items: center;
-            justify-content: space-between;
-            gap: 12px;
+            justify-content: center;
             margin-bottom: 12px;
             padding: 10px 14px;
-            background: linear-gradient(135deg, #ed8936, #dd6b20);
+            background: linear-gradient(135deg, #38a169, #2f855a);
             color: #ffffff;
             border-radius: 12px;
         }
@@ -43,12 +42,6 @@
             margin: 0;
             font-size: clamp(1rem, 2.4vw, 1.35rem);
             line-height: 1.15;
-        }
-
-        .hint {
-            font-size: 0.78rem;
-            opacity: 0.9;
-            white-space: nowrap;
         }
 
         .calendar {
@@ -115,12 +108,35 @@
         .task {
             display: grid;
             grid-template-columns: 32px 1fr 26px;
-            gap: 6px;
+            grid-template-rows: auto auto;
+            gap: 4px 6px;
             align-items: start;
             padding: 7px;
             background: #ffffff;
             border: 1px solid var(--border);
             border-radius: 10px;
+        }
+
+        .task-controls {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            align-items: center;
+        }
+
+        .responsavel {
+            width: 30px;
+            height: 24px;
+            padding: 0;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background: #f7fafc;
+            cursor: pointer;
+            font-size: 0.7rem;
+            font-weight: 800;
+            text-align: center;
+            color: var(--text);
+            appearance: none;
         }
 
         .task-text {
@@ -166,16 +182,6 @@
                 padding: 8px;
             }
 
-            header {
-                align-items: flex-start;
-                flex-direction: column;
-                gap: 4px;
-            }
-
-            .hint {
-                white-space: normal;
-            }
-
             .calendar {
                 grid-template-columns: 1fr;
             }
@@ -185,7 +191,6 @@
 <body>
     <header>
         <h1>🎪 Cronograma de Montagem</h1>
-        <span class="hint">Clique para editar</span>
     </header>
 
     <main id="calendar" class="calendar"></main>
@@ -288,11 +293,20 @@
 
                 const tarefas = dia.tarefas.map((tarefa, tarefaIdx) => `
                     <article class="task">
-                        <select class="status" onchange="atualizarStatus(${diaIdx}, ${tarefaIdx}, this.value)" title="Status">
-                            <option value="pendente" ${tarefa.status === 'pendente' ? 'selected' : ''}>🔴</option>
-                            <option value="andamento" ${tarefa.status === 'andamento' ? 'selected' : ''}>🟡</option>
-                            <option value="concluido" ${tarefa.status === 'concluido' ? 'selected' : ''}>🟢</option>
-                        </select>
+                        <div class="task-controls">
+                            <select class="status" onchange="atualizarStatus(${diaIdx}, ${tarefaIdx}, this.value)" title="Status">
+                                <option value="pendente" ${tarefa.status === 'pendente' ? 'selected' : ''}>🔴</option>
+                                <option value="andamento" ${tarefa.status === 'andamento' ? 'selected' : ''}>🟡</option>
+                                <option value="concluido" ${tarefa.status === 'concluido' ? 'selected' : ''}>🟢</option>
+                            </select>
+                            <select class="responsavel" onchange="atualizarResponsavel(${diaIdx}, ${tarefaIdx}, this.value)" title="Responsável">
+                                <option value="" ${!tarefa.responsavel ? 'selected' : ''}>-</option>
+                                <option value="A" ${tarefa.responsavel === 'A' ? 'selected' : ''}>A</option>
+                                <option value="T" ${tarefa.responsavel === 'T' ? 'selected' : ''}>T</option>
+                                <option value="M" ${tarefa.responsavel === 'M' ? 'selected' : ''}>M</option>
+                                <option value="J" ${tarefa.responsavel === 'J' ? 'selected' : ''}>J</option>
+                            </select>
+                        </div>
                         <div class="task-text" contenteditable="true" onblur="atualizarTarefa(${diaIdx}, ${tarefaIdx}, this.innerText)">${escapar(tarefa.tarefa)}</div>
                         <button class="delete" type="button" onclick="deletarTarefa(${diaIdx}, ${tarefaIdx})">×</button>
                     </article>
@@ -334,8 +348,13 @@
             salvar();
         }
 
+        function atualizarResponsavel(diaIdx, tarefaIdx, valor) {
+            dados[diaIdx].tarefas[tarefaIdx].responsavel = valor;
+            salvar();
+        }
+
         function adicionarTarefa(diaIdx) {
-            dados[diaIdx].tarefas.push({ tarefa: 'Nova tarefa', status: 'pendente' });
+            dados[diaIdx].tarefas.push({ tarefa: 'Nova tarefa', status: 'pendente', responsavel: '' });
             salvar();
             renderizar();
         }
