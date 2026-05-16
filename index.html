@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cronograma de Montagem</title>
+    <title>Cronograma de Montagem - TREVO</title>
     <style>
         :root {
             --bg: #f6f3ee;
@@ -13,6 +13,24 @@
             --border: #e2e8f0;
             --primary: #3c4442;
             --danger: #e53e3e;
+            --day-head-bg: #fff7ed;
+            --task-bg: #ffffff;
+            --control-bg: rgba(0,0,0,0.03);
+            --shadow: rgba(45, 55, 72, 0.06);
+        }
+
+        .dark {
+            --bg: #1a1a2e;
+            --card: #16213e;
+            --text: #e2e8f0;
+            --muted: #a0aec0;
+            --border: #2d3748;
+            --primary: #a0aec0;
+            --danger: #fc8181;
+            --day-head-bg: #1a2744;
+            --task-bg: #16213e;
+            --control-bg: rgba(255,255,255,0.05);
+            --shadow: rgba(0, 0, 0, 0.3);
         }
 
         * {
@@ -31,11 +49,31 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            position: relative;
             margin-bottom: 12px;
             padding: 10px 14px;
-            background: linear-gradient(135deg, #38a169, #2f855a);
+            background: #000000;
             color: #ffffff;
             border-radius: 12px;
+        }
+
+        .user-badge {
+            position: absolute;
+            right: 14px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(255,255,255,0.12);
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            border: 1px solid rgba(255,255,255,0.2);
+            white-space: nowrap;
+        }
+
+        .user-badge:hover {
+            background: rgba(255,255,255,0.2);
         }
 
         h1 {
@@ -58,7 +96,7 @@
             border-top: 5px solid var(--primary);
             border-radius: 12px;
             overflow: hidden;
-            box-shadow: 0 8px 20px rgba(45, 55, 72, 0.06);
+            box-shadow: 0 8px 20px var(--shadow);
         }
 
         .day-head {
@@ -67,12 +105,13 @@
             justify-content: space-between;
             gap: 8px;
             padding: 8px 9px;
-            background: #fff7ed;
+            background: var(--day-head-bg);
             border-bottom: 1px solid var(--border);
         }
 
         .day-title {
-            min-width: 0;
+            flex: 1;
+            text-align: center;
             font-weight: 850;
             color: var(--primary);
             font-size: 0.9rem;
@@ -83,11 +122,12 @@
 
         .day-title:focus,
         .task-text:focus {
-            background: #fff7ed;
+            background: var(--day-head-bg);
             outline: 2px solid var(--primary);
         }
 
-        .add-task {
+        .add-task,
+        .trash-btn {
             width: 28px;
             height: 28px;
             border: 1px solid #fbd38d;
@@ -96,6 +136,15 @@
             border-radius: 8px;
             cursor: pointer;
             font-weight: 900;
+            font-size: 0.8rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .trash-btn.has-trash {
+            border-color: var(--danger);
+            color: var(--danger);
         }
 
         .tasks {
@@ -110,9 +159,33 @@
             flex-direction: column;
             gap: 4px;
             padding: 6px 7px;
-            background: #ffffff;
+            background: var(--task-bg);
             border: 1px solid var(--border);
             border-radius: 10px;
+            cursor: grab;
+            transition: opacity 0.2s, transform 0.2s;
+        }
+
+        .task:active { cursor: grabbing; }
+
+        .task.dragging {
+            opacity: 0.4;
+            transform: scale(0.95);
+        }
+
+        .task.drag-over {
+            border: 2px dashed var(--primary);
+        }
+
+        .task.highlight {
+            animation: pulse 0.6s ease-in-out 3;
+            border-color: #f6e05e;
+            box-shadow: 0 0 12px rgba(246, 224, 94, 0.5);
+        }
+
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 0 4px rgba(246, 224, 94, 0.3); }
+            50% { box-shadow: 0 0 16px rgba(246, 224, 94, 0.7); }
         }
 
         .task-row {
@@ -124,38 +197,39 @@
         .task-controls {
             display: flex;
             flex-direction: row;
-            gap: 3px;
+            gap: 2px;
             align-items: center;
         }
 
         .responsavel {
-            width: 18px;
-            height: 16px;
-            padding: 0;
+            width: auto;
+            min-width: 46px;
+            height: 20px;
+            padding: 0 2px;
             border: 1px solid var(--border);
             border-radius: 4px;
-            background: #f7fafc;
+            background: var(--control-bg);
             cursor: pointer;
-            font-size: 0.55rem;
+            font-size: 0.6rem;
             font-weight: 800;
             text-align: center;
             color: var(--text);
             appearance: none;
         }
 
-        .resp-A { color: #3182ce; }
-        .resp-T { color: #e53e3e; }
-        .resp-M { color: #805ad5; }
-        .resp-J { color: #dd6b20; }
+        .resp-André { color: #3182ce; }
+        .resp-Tavares { color: #e53e3e; }
+        .resp-Morgan { color: #805ad5; }
+        .resp-Juarez { color: #dd6b20; }
 
         .horario {
-            width: 22px;
-            height: 16px;
+            width: 36px;
+            height: 20px;
             padding: 0 1px;
             border: 1px solid var(--border);
             border-radius: 4px;
-            background: #f7fafc;
-            font-size: 0.5rem;
+            background: var(--control-bg);
+            font-size: 0.65rem;
             text-align: center;
             color: var(--text);
             outline: none;
@@ -176,14 +250,15 @@
         }
 
         .status {
-            width: 18px;
-            height: 16px;
-            padding: 0;
-            border: none;
+            width: auto;
+            min-width: 78px;
+            height: 20px;
+            padding: 0 3px;
+            border: 1px solid var(--border);
             border-radius: 4px;
-            background: #f7fafc;
+            background: var(--control-bg);
             cursor: pointer;
-            font-size: 0.55rem;
+            font-size: 0.6rem;
             text-align: center;
             appearance: none;
         }
@@ -191,17 +266,158 @@
         .delete {
             width: 18px;
             height: 18px;
-            border: none;
-            background: transparent;
+            border: 1px solid var(--border);
+            background: var(--control-bg);
             color: var(--danger);
             border-radius: 4px;
             cursor: pointer;
-            font-size: 0.7rem;
+            font-size: 0.65rem;
             flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .delete:hover {
             background: #fed7d7;
+        }
+
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.45);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal {
+            background: var(--card);
+            border-radius: 14px;
+            padding: 20px;
+            width: 90%;
+            max-width: 440px;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.2);
+        }
+
+        .modal h2 {
+            margin: 0 0 14px;
+            font-size: 1rem;
+            color: var(--primary);
+        }
+
+        .modal-close {
+            float: right;
+            border: none;
+            background: transparent;
+            font-size: 1.2rem;
+            cursor: pointer;
+            color: var(--muted);
+        }
+
+        .trash-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            padding: 8px 10px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            margin-bottom: 6px;
+            font-size: 0.82rem;
+        }
+
+        .trash-item-text {
+            flex: 1;
+            color: var(--text);
+        }
+
+        .trash-item-actions {
+            display: flex;
+            gap: 4px;
+        }
+
+        .trash-item-actions button {
+            border: 1px solid var(--border);
+            background: var(--control-bg);
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.7rem;
+            padding: 2px 7px;
+        }
+
+        .trash-restore {
+            color: #38a169;
+        }
+
+        .trash-restore:hover {
+            background: #c6f6d5;
+        }
+
+        .trash-permadelete {
+            color: var(--danger);
+        }
+
+        .trash-permadelete:hover {
+            background: #fed7d7;
+        }
+
+        .trash-empty {
+            text-align: center;
+            color: var(--muted);
+            padding: 20px;
+            font-size: 0.85rem;
+        }
+
+        .theme-toggle {
+            position: absolute;
+            left: 14px;
+            background: rgba(255,255,255,0.12);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: #ffffff;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            padding: 4px 8px;
+            line-height: 1;
+        }
+
+        .theme-toggle:hover {
+            background: rgba(255,255,255,0.2);
+        }
+
+        .search-bar {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 10px;
+        }
+
+        .search-bar input {
+            flex: 1;
+            padding: 8px 12px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            background: var(--card);
+            color: var(--text);
+            font-size: 0.85rem;
+            outline: none;
+        }
+
+        .search-bar input:focus {
+            border-color: var(--primary);
+        }
+
+        .search-bar button {
+            padding: 8px 12px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            background: var(--card);
+            color: var(--muted);
+            cursor: pointer;
+            font-size: 0.85rem;
         }
 
         @media (max-width: 700px) {
@@ -217,13 +433,26 @@
 </head>
 <body>
     <header>
-        <h1>🎪 Cronograma de Montagem</h1>
+        <button id="themeToggle" class="theme-toggle" onclick="alternarTema()" title="Alternar tema">🌙</button>
+        <h1>🎪 PLANEJAMENTO TREVO</h1>
+        <span id="userBadge" class="user-badge" onclick="selecionarUsuario()" title="Trocar usuário">👤 ...</span>
     </header>
+
+    <div class="search-bar">
+        <input id="searchInput" type="text" placeholder="🔍 Buscar tarefa..." oninput="buscarTarefa()">
+        <button onclick="limparBusca()" title="Limpar">✕</button>
+    </div>
 
     <main id="calendar" class="calendar"></main>
 
     <script>
         const STORAGE_KEY = 'cronograma-montagem-simplificado-v2';
+        const USUARIO_KEY = 'cronograma-usuario-atual';
+        const TEMA_KEY = 'cronograma-tema';
+
+        let usuarioAtual = localStorage.getItem(USUARIO_KEY) || '';
+        let dragDiaIdx = null;
+        let dragTarefaIdx = null;
 
         const dadosIniciais = [
             { data: '16/05 (Sábado)', tarefas: [
@@ -319,36 +548,38 @@
                 section.className = 'day';
 
                 const tarefas = dia.tarefas.map((tarefa, tarefaIdx) => `
-                    <article class="task">
+                    <article class="task" draggable="true" data-dia="${diaIdx}" data-tarefa="${tarefaIdx}" ondragstart="dragStart(event, ${diaIdx}, ${tarefaIdx})" ondragend="dragEnd(event)">
                         <div class="task-row">
                             <div class="task-text" contenteditable="true" onblur="atualizarTarefa(${diaIdx}, ${tarefaIdx}, this.innerText)">${escapar(tarefa.tarefa)}</div>
-                            <button class="delete" type="button" onclick="deletarTarefa(${diaIdx}, ${tarefaIdx})">×</button>
                         </div>
                         <div class="task-controls">
                             <select class="status" onchange="atualizarStatus(${diaIdx}, ${tarefaIdx}, this.value)" title="Status">
-                                <option value="pendente" ${tarefa.status === 'pendente' ? 'selected' : ''}>⚪</option>
-                                <option value="urgente" ${tarefa.status === 'urgente' ? 'selected' : ''}>🔴</option>
-                                <option value="andamento" ${tarefa.status === 'andamento' ? 'selected' : ''}>🟡</option>
-                                <option value="concluido" ${tarefa.status === 'concluido' ? 'selected' : ''}>🟢</option>
+                                <option value="pendente" ${tarefa.status === 'pendente' ? 'selected' : ''}>⚪ Pendente</option>
+                                <option value="urgente" ${tarefa.status === 'urgente' ? 'selected' : ''}>🔴 Urgente</option>
+                                <option value="atrasado" ${tarefa.status === 'atrasado' ? 'selected' : ''}>⚠️ Atrasado</option>
+                                <option value="andamento" ${tarefa.status === 'andamento' ? 'selected' : ''}>🟡 Andamento</option>
+                                <option value="concluido" ${tarefa.status === 'concluido' ? 'selected' : ''}>🟢 Concluído</option>
                             </select>
                             <select class="responsavel resp-${tarefa.responsavel || ''}" onchange="atualizarResponsavel(${diaIdx}, ${tarefaIdx}, this)" title="Responsável">
-                                <option value="" ${!tarefa.responsavel ? 'selected' : ''}>-</option>
-                                <option value="A" ${tarefa.responsavel === 'A' ? 'selected' : ''}>A</option>
-                                <option value="T" ${tarefa.responsavel === 'T' ? 'selected' : ''}>T</option>
-                                <option value="M" ${tarefa.responsavel === 'M' ? 'selected' : ''}>M</option>
-                                <option value="J" ${tarefa.responsavel === 'J' ? 'selected' : ''}>J</option>
+                                <option value="" ${!tarefa.responsavel ? 'selected' : ''}>Resp.</option>
+                                <option value="André" ${tarefa.responsavel === 'André' ? 'selected' : ''}>🦾 André</option>
+                                <option value="Morgan" ${tarefa.responsavel === 'Morgan' ? 'selected' : ''}>🕷️ Morgan</option>
+                                <option value="Juarez" ${tarefa.responsavel === 'Juarez' ? 'selected' : ''}>🥷 Juarez</option>
+                                <option value="Tavares" ${tarefa.responsavel === 'Tavares' ? 'selected' : ''}>💪 Tavares</option>
                             </select>
-                            <input class="horario" type="text" value="${escapar(tarefa.horario || '')}" onblur="atualizarHorario(${diaIdx}, ${tarefaIdx}, this.value)" placeholder="h" maxlength="5" title="Horário">
+                            <input class="horario" type="text" value="${escapar(tarefa.horario || '')}" oninput="formatarHorario(this)" onblur="atualizarHorario(${diaIdx}, ${tarefaIdx}, this.value)" placeholder="00:00" maxlength="5" title="Horário">
+                            <button class="delete" type="button" onclick="deletarTarefa(${diaIdx}, ${tarefaIdx})">×</button>
                         </div>
                     </article>
                 `).join('');
 
                 section.innerHTML = `
                     <div class="day-head">
+                        <button class="trash-btn${(dia.lixeira && dia.lixeira.length) ? ' has-trash' : ''}" type="button" onclick="abrirLixeira(${diaIdx})" title="Lixeira">🗑️</button>
                         <div class="day-title" contenteditable="true" onblur="atualizarDia(${diaIdx}, this.innerText)">${escapar(dia.data)}</div>
                         <button class="add-task" type="button" onclick="adicionarTarefa(${diaIdx})">+</button>
                     </div>
-                    <div class="tasks">${tarefas}</div>
+                    <div class="tasks" ondragover="dragOver(event)" ondragleave="dragLeave(event)" ondrop="drop(event, ${diaIdx})">${tarefas}</div>
                 `;
 
                 calendar.appendChild(section);
@@ -386,6 +617,15 @@
             salvar();
         }
 
+        function formatarHorario(input) {
+            let valor = input.value.replace(/\D/g, '');
+            if (valor.length > 4) valor = valor.slice(0, 4);
+            if (valor.length >= 3) {
+                valor = valor.slice(0, 2) + ':' + valor.slice(2);
+            }
+            input.value = valor;
+        }
+
         function atualizarHorario(diaIdx, tarefaIdx, valor) {
             dados[diaIdx].tarefas[tarefaIdx].horario = valor.trim();
             salvar();
@@ -398,9 +638,189 @@
         }
 
         function deletarTarefa(diaIdx, tarefaIdx) {
-            dados[diaIdx].tarefas.splice(tarefaIdx, 1);
+            if (!confirm('Deseja realmente apagar esta tarefa?')) return;
+            if (!dados[diaIdx].lixeira) dados[diaIdx].lixeira = [];
+            const removida = dados[diaIdx].tarefas.splice(tarefaIdx, 1)[0];
+            removida._apagadoPor = usuarioAtual || 'Desconhecido';
+            removida._apagadoEm = new Date().toLocaleString('pt-BR');
+            dados[diaIdx].lixeira.push(removida);
             salvar();
             renderizar();
+        }
+
+        function abrirLixeira(diaIdx) {
+            if (!dados[diaIdx].lixeira) dados[diaIdx].lixeira = [];
+            const lixeira = dados[diaIdx].lixeira;
+
+            const overlay = document.createElement('div');
+            overlay.className = 'modal-overlay';
+            overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
+
+            let itensHtml = '';
+            if (lixeira.length === 0) {
+                itensHtml = '<div class="trash-empty">Lixeira vazia</div>';
+            } else {
+                itensHtml = lixeira.map((t, i) => `
+                    <div class="trash-item">
+                        <span class="trash-item-text">${escapar(t.tarefa)}${t._apagadoPor ? `<br><small style="color:var(--muted)">Apagado por: ${escapar(t._apagadoPor)}</small>` : ''}</span>
+                        <div class="trash-item-actions">
+                            <button class="trash-restore" onclick="restaurarTarefa(${diaIdx}, ${i})">↩</button>
+                            <button class="trash-permadelete" onclick="deletarPermanente(${diaIdx}, ${i})">✕</button>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            overlay.innerHTML = `
+                <div class="modal">
+                    <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">✕</button>
+                    <h2>🗑️ Lixeira — ${escapar(dados[diaIdx].data)}</h2>
+                    ${itensHtml}
+                </div>
+            `;
+
+            document.body.appendChild(overlay);
+        }
+
+        function restaurarTarefa(diaIdx, lixeiraIdx) {
+            const tarefa = dados[diaIdx].lixeira.splice(lixeiraIdx, 1)[0];
+            dados[diaIdx].tarefas.push(tarefa);
+            salvar();
+            document.querySelector('.modal-overlay').remove();
+            renderizar();
+        }
+
+        function deletarPermanente(diaIdx, lixeiraIdx) {
+            dados[diaIdx].lixeira.splice(lixeiraIdx, 1);
+            salvar();
+            document.querySelector('.modal-overlay').remove();
+            abrirLixeira(diaIdx);
+        }
+
+        function dragStart(e, diaIdx, tarefaIdx) {
+            dragDiaIdx = diaIdx;
+            dragTarefaIdx = tarefaIdx;
+            e.target.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', '');
+        }
+
+        function dragEnd(e) {
+            e.target.classList.remove('dragging');
+            document.querySelectorAll('.task.drag-over').forEach(el => el.classList.remove('drag-over'));
+            dragDiaIdx = null;
+            dragTarefaIdx = null;
+        }
+
+        function dragOver(e) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+        }
+
+        function dragLeave(e) {
+            const task = e.target.closest('.task');
+            if (task) task.classList.remove('drag-over');
+        }
+
+        function drop(e, destinoDiaIdx) {
+            e.preventDefault();
+            if (dragDiaIdx === null || dragTarefaIdx === null) return;
+            if (dragDiaIdx === destinoDiaIdx) return;
+
+            const tarefa = dados[dragDiaIdx].tarefas.splice(dragTarefaIdx, 1)[0];
+            dados[destinoDiaIdx].tarefas.push(tarefa);
+            salvar();
+            renderizar();
+        }
+
+        function alternarTema() {
+            const html = document.documentElement;
+            const btn = document.getElementById('themeToggle');
+            if (html.classList.contains('dark')) {
+                html.classList.remove('dark');
+                btn.textContent = '🌙';
+                localStorage.setItem(TEMA_KEY, 'light');
+            } else {
+                html.classList.add('dark');
+                btn.textContent = '☀️';
+                localStorage.setItem(TEMA_KEY, 'dark');
+            }
+        }
+
+        function buscarTarefa() {
+            const termo = document.getElementById('searchInput').value.toLowerCase().trim();
+            document.querySelectorAll('.task.highlight').forEach(el => el.classList.remove('highlight'));
+
+            if (!termo) return;
+
+            let encontrado = false;
+            document.querySelectorAll('.task').forEach(task => {
+                const texto = task.querySelector('.task-text')?.innerText.toLowerCase() || '';
+                if (texto.includes(termo)) {
+                    task.classList.add('highlight');
+                    if (!encontrado) {
+                        task.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        encontrado = true;
+                    }
+                }
+            });
+        }
+
+        function limparBusca() {
+            document.getElementById('searchInput').value = '';
+            document.querySelectorAll('.task.highlight').forEach(el => el.classList.remove('highlight'));
+        }
+
+        function selecionarUsuario() {
+            const overlay = document.createElement('div');
+            overlay.className = 'modal-overlay';
+            overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
+
+            const icones = { 'André': '🦾', 'Tavares': '💪', 'Juarez': '🥷', 'Morgan': '🕷️' };
+            const responsaveis = ['André', 'Morgan', 'Juarez', 'Tavares'];
+            const botoes = responsaveis.map(r => `
+                <button style="display:block;width:100%;margin-bottom:6px;padding:10px;border:1px solid var(--border);border-radius:8px;background:#f7fafc;cursor:pointer;font-size:0.9rem;text-align:left" onclick="definirUsuario('${r}')">${icones[r]} ${r}</button>
+            `).join('');
+
+            overlay.innerHTML = `
+                <div class="modal">
+                    <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">✕</button>
+                    <h2>Quem está acessando?</h2>
+                    ${botoes}
+                </div>
+            `;
+
+            document.body.appendChild(overlay);
+        }
+
+        function definirUsuario(nome) {
+            usuarioAtual = nome;
+            localStorage.setItem(USUARIO_KEY, nome);
+            atualizarBadge();
+            document.querySelector('.modal-overlay').remove();
+        }
+
+        function iconeUsuario(nome) {
+            const map = { 'André': '🦾', 'Tavares': '💪', 'Juarez': '🥷', 'Morgan': '🕷️' };
+            return map[nome] || '👤';
+        }
+
+        function atualizarBadge() {
+            const badge = document.getElementById('userBadge');
+            if (badge) {
+                badge.innerHTML = usuarioAtual ? `${iconeUsuario(usuarioAtual)} ${usuarioAtual}` : '👤 ...';
+            }
+        }
+
+        if (localStorage.getItem(TEMA_KEY) === 'dark') {
+            document.documentElement.classList.add('dark');
+            document.getElementById('themeToggle').textContent = '☀️';
+        }
+
+        if (!usuarioAtual) {
+            selecionarUsuario();
+        } else {
+            atualizarBadge();
         }
 
         renderizar();
