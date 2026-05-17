@@ -464,7 +464,7 @@
             <option value="Tavares">💪 Tavares</option>
             <option value="_sem_responsavel">Sem responsável</option>
         </select>
-        <button onclick="copiarRelatorioIA()" title="Copiar relatório para IA">🤖 IA</button>
+        <button onclick="analisarComIA()" title="Gerar análise automática com IA">🤖 IA</button>
         <button onclick="limparBusca()" title="Limpar">✕</button>
     </div>
 
@@ -967,6 +967,44 @@ ${linhasCronograma}`;
                 alert('Relatório copiado! Cole na IA para receber a análise.');
             } catch {
                 prompt('Copie o relatório abaixo:', relatorio);
+            }
+        }
+
+        async function analisarComIA() {
+            const relatorio = gerarRelatorioIA();
+            const overlay = document.createElement('div');
+            overlay.className = 'modal-overlay';
+            overlay.innerHTML = `
+                <div class="modal">
+                    <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">✕</button>
+                    <h2>🤖 Análise IA da montagem</h2>
+                    <div id="iaResultado" style="white-space:pre-wrap;font-size:0.85rem;line-height:1.45;color:var(--text)">Analisando cronograma atualizado...</div>
+                </div>
+            `;
+            document.body.appendChild(overlay);
+
+            try {
+                const response = await fetch(`${SUPABASE_URL}/functions/v1/analisar-cronograma`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${SUPABASE_KEY}`
+                    },
+                    body: JSON.stringify({ relatorio })
+                });
+
+                const result = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(result.error || 'Erro ao gerar análise com IA.');
+                }
+
+                document.getElementById('iaResultado').innerText = result.analise || 'A IA não retornou uma análise.';
+            } catch (error) {
+                document.getElementById('iaResultado').innerText = `Não foi possível gerar a análise automática.\n\nMotivo: ${error.message}\n\nComo alternativa, o relatório foi copiado para você colar manualmente na IA.`;
+                try {
+                    await navigator.clipboard.writeText(relatorio);
+                } catch {}
             }
         }
 
