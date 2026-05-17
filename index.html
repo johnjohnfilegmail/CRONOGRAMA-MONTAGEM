@@ -630,22 +630,22 @@
                             <div class="task-text" contenteditable="true" onblur="atualizarTarefa(${diaIdx}, ${tarefaIdx}, this.innerText)">${escapar(tarefa.tarefa)}</div>
                         </div>
                         <div class="task-controls">
-                            <select class="status" onchange="atualizarStatus(${diaIdx}, ${tarefaIdx}, this.value)" title="Status">
+                            <select class="status" onclick="event.stopPropagation()" onmousedown="event.stopPropagation()" ontouchstart="event.stopPropagation()" onchange="atualizarStatus(${diaIdx}, ${tarefaIdx}, this.value)" title="Status">
                                 <option value="pendente" ${tarefa.status === 'pendente' ? 'selected' : ''}>⚪ Pendente</option>
                                 <option value="urgente" ${tarefa.status === 'urgente' ? 'selected' : ''}>🔴 Urgente</option>
                                 <option value="atrasado" ${tarefa.status === 'atrasado' ? 'selected' : ''}>⚠️ Atrasado</option>
                                 <option value="andamento" ${tarefa.status === 'andamento' ? 'selected' : ''}>🟡 Andamento</option>
                                 <option value="concluido" ${tarefa.status === 'concluido' ? 'selected' : ''}>🟢 Concluído</option>
                             </select>
-                            <select class="responsavel resp-${tarefa.responsavel || ''}" onchange="atualizarResponsavel(${diaIdx}, ${tarefaIdx}, this)" title="Responsável">
+                            <select class="responsavel resp-${tarefa.responsavel || ''}" onclick="event.stopPropagation()" onmousedown="event.stopPropagation()" ontouchstart="event.stopPropagation()" onchange="atualizarResponsavel(${diaIdx}, ${tarefaIdx}, this)" title="Responsável">
                                 <option value="" ${!tarefa.responsavel ? 'selected' : ''}>Resp.</option>
                                 <option value="André" ${tarefa.responsavel === 'André' ? 'selected' : ''}>🦾 André</option>
                                 <option value="Morgan" ${tarefa.responsavel === 'Morgan' ? 'selected' : ''}>🕷️ Morgan</option>
                                 <option value="Juarez" ${tarefa.responsavel === 'Juarez' ? 'selected' : ''}>🥷 Juarez</option>
                                 <option value="Tavares" ${tarefa.responsavel === 'Tavares' ? 'selected' : ''}>💪 Tavares</option>
                             </select>
-                            <input class="horario" type="text" value="${escapar(tarefa.horario || '')}" oninput="formatarHorario(this)" onblur="atualizarHorario(${diaIdx}, ${tarefaIdx}, this.value)" placeholder="00:00" maxlength="5" title="Horário">
-                            <button class="delete" type="button" onclick="deletarTarefa(${diaIdx}, ${tarefaIdx})">×</button>
+                            <input class="horario" type="text" value="${escapar(tarefa.horario || '')}" onclick="event.stopPropagation()" onmousedown="event.stopPropagation()" ontouchstart="event.stopPropagation()" oninput="formatarHorario(this)" onblur="atualizarHorario(${diaIdx}, ${tarefaIdx}, this.value)" placeholder="00:00" maxlength="5" title="Horário">
+                            <button class="delete" type="button" onclick="event.stopPropagation(); deletarTarefa(${diaIdx}, ${tarefaIdx})">×</button>
                         </div>
                     </article>
                 `).join('');
@@ -775,6 +775,11 @@
         }
 
         function dragStart(e, diaIdx, tarefaIdx) {
+            if (e.target.closest('select, input, button')) {
+                e.preventDefault();
+                return;
+            }
+
             dragDiaIdx = diaIdx;
             dragTarefaIdx = tarefaIdx;
             e.target.classList.add('dragging');
