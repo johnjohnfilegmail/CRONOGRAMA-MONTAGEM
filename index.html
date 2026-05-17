@@ -732,7 +732,33 @@
 
         function atualizarHorario(diaIdx, tarefaIdx, valor) {
             dados[diaIdx].tarefas[tarefaIdx].horario = valor.trim();
+            ordenarTarefasPorHorario(diaIdx);
             salvar();
+            renderizar();
+        }
+
+        function ordenarTarefasPorHorario(diaIdx) {
+            dados[diaIdx].tarefas.sort((a, b) => {
+                const minA = horarioParaMinutos(a.horario);
+                const minB = horarioParaMinutos(b.horario);
+
+                if (minA === null && minB === null) return 0;
+                if (minA === null) return 1;
+                if (minB === null) return -1;
+
+                return minA - minB;
+            });
+        }
+
+        function horarioParaMinutos(horario) {
+            const match = String(horario || '').match(/^(\d{1,2}):(\d{2})$/);
+            if (!match) return null;
+
+            const horas = Number(match[1]);
+            const minutos = Number(match[2]);
+
+            if (horas > 23 || minutos > 59) return null;
+            return horas * 60 + minutos;
         }
 
         function adicionarTarefa(diaIdx) {
