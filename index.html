@@ -343,6 +343,71 @@
             color: var(--muted);
         }
 
+        .notes-modal {
+            width: min(1100px, 94vw);
+            max-width: none;
+            height: 84vh;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .notes-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 12px;
+            flex: 1;
+            min-height: 0;
+        }
+
+        .note-box {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            min-height: 0;
+        }
+
+        .note-box label {
+            font-weight: 700;
+            color: var(--text);
+            font-size: 0.85rem;
+        }
+
+        .note-box textarea {
+            flex: 1;
+            min-height: 180px;
+            resize: none;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 10px;
+            background: var(--bg);
+            color: var(--text);
+            font-size: 0.85rem;
+            line-height: 1.45;
+            outline: none;
+        }
+
+        .note-box textarea:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px rgba(56, 161, 105, 0.12);
+        }
+
+        .notes-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+        }
+
+        .notes-actions button {
+            padding: 8px 12px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            background: var(--control-bg);
+            color: var(--text);
+            cursor: pointer;
+            font-size: 0.85rem;
+        }
+
         .trash-item {
             display: flex;
             align-items: center;
@@ -469,6 +534,10 @@
             .calendar {
                 grid-template-columns: 1fr;
             }
+
+            .notes-grid {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 </head>
@@ -489,6 +558,7 @@
             <option value="Tavares">💪 Tavares</option>
             <option value="_sem_responsavel">Sem responsável</option>
         </select>
+        <button onclick="abrirRascunho()" title="Abrir bloco de notas da equipe">📝 Rascunho</button>
         <button onclick="analisarComIA()" title="Gerar análise automática com IA">🤖 IA</button>
         <button onclick="copiarStatusGeral()" title="Copiar status geral das tarefas">📋 Status</button>
         <button onclick="limparBusca()" title="Limpar">✕</button>
@@ -500,6 +570,7 @@
         const STORAGE_KEY = 'cronograma-montagem-simplificado-v3';
         const USUARIO_KEY = 'cronograma-usuario-atual';
         const TEMA_KEY = 'cronograma-tema';
+        const RASCUNHO_KEY = 'cronograma-rascunho-equipe';
         const SUPABASE_URL = 'https://xorfmikxqmyischizdap.supabase.co';
         const SUPABASE_KEY = 'sb_publishable_2lcPlg9nKDuVFh1EhVx2Ew_de06S8iX';
         const SUPABASE_TABLE = 'cronograma';
@@ -511,6 +582,7 @@
         let dragTarefaIdx = null;
         let salvandoSupabase = false;
         let alertaPiscando = false;
+        let rascunhos = carregarRascunhos();
 
         const dadosIniciais = [
             { data: '16/05 (Sábado)', tarefas: [
@@ -1071,6 +1143,69 @@ ${linhasCronograma}`;
                 alert('Status geral copiado!');
             } catch {
                 prompt('Copie o status geral abaixo:', statusGeral);
+            }
+        }
+
+        function carregarRascunhos() {
+            const vazio = { 'André': '', 'Morgan': '', 'Juarez': '', 'Tavares': '' };
+            const salvo = localStorage.getItem(RASCUNHO_KEY);
+            if (!salvo) return vazio;
+
+            try {
+                return { ...vazio, ...JSON.parse(salvo) };
+            } catch {
+                return vazio;
+            }
+        }
+
+        function salvarRascunho(nome, valor) {
+            rascunhos[nome] = valor;
+            localStorage.setItem(RASCUNHO_KEY, JSON.stringify(rascunhos));
+        }
+
+        function abrirRascunho() {
+            const overlay = document.createElement('div');
+            overlay.className = 'modal-overlay';
+            overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
+
+            const pessoas = [
+                { nome: 'André', icone: '🦾' },
+                { nome: 'Morgan', icone: '🕷️' },
+                { nome: 'Juarez', icone: '🥷' },
+                { nome: 'Tavares', icone: '💪' }
+            ];
+
+            const blocos = pessoas.map(pessoa => `
+                <div class="note-box">
+                    <label for="rascunho-${pessoa.nome}">${pessoa.icone} ${pessoa.nome}</label>
+                    <textarea id="rascunho-${pessoa.nome}" placeholder="Digite lembretes, pendências, ideias e observações..." oninput="salvarRascunho('${pessoa.nome}', this.value)">${escapar(rascunhos[pessoa.nome] || '')}</textarea>
+                </div>
+            `).join('');
+
+            overlay.innerHTML = `
+                <div class="modal notes-modal">
+                    <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">✕</button>
+                    <h2>📝 Rascunho da equipe</h2>
+                    <div class="notes-grid">${blocos}</div>
+                    <div class="notes-actions">
+                        <button onclick="copiarRascunhoEquipe()">Copiar rascunho</button>
+                    </div>
+                </div>
+            `;
+
+            document.body.appendChild(overlay);
+        }
+
+        async function copiarRascunhoEquipe() {
+            const texto = Object.entries(rascunhos)
+                .map(([nome, conteudo]) => `## ${nome}\n${conteudo || 'Sem anotações.'}`)
+                .join('\n\n');
+
+            try {
+                await navigator.clipboard.writeText(texto);
+                alert('Rascunho copiado!');
+            } catch {
+                prompt('Copie o rascunho abaixo:', texto);
             }
         }
 
