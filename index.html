@@ -420,6 +420,22 @@
             font-size: 0.85rem;
         }
 
+        .search-bar select {
+            padding: 8px 12px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            background: var(--card);
+            color: var(--text);
+            cursor: pointer;
+            font-size: 0.85rem;
+            outline: none;
+            min-width: 130px;
+        }
+
+        .search-bar select:focus {
+            border-color: var(--primary);
+        }
+
         @media (max-width: 700px) {
             body {
                 padding: 8px;
@@ -440,6 +456,15 @@
 
     <div class="search-bar">
         <input id="searchInput" type="text" placeholder="🔍 Buscar tarefa..." oninput="buscarTarefa()">
+        <select id="responsavelFilter" onchange="aplicarFiltros()" title="Filtrar por responsável">
+            <option value="">Filtrar: Todos</option>
+            <option value="André">🦾 André</option>
+            <option value="Morgan">🕷️ Morgan</option>
+            <option value="Juarez">🥷 Juarez</option>
+            <option value="Tavares">💪 Tavares</option>
+            <option value="_sem_responsavel">Sem responsável</option>
+        </select>
+        <button onclick="copiarRelatorioIA()" title="Copiar relatório para IA">🤖 IA</button>
         <button onclick="limparBusca()" title="Limpar">✕</button>
     </div>
 
@@ -625,7 +650,7 @@
                 section.className = 'day';
 
                 const tarefas = dia.tarefas.map((tarefa, tarefaIdx) => `
-                    <article class="task" draggable="true" data-dia="${diaIdx}" data-tarefa="${tarefaIdx}" ondragstart="dragStart(event, ${diaIdx}, ${tarefaIdx})" ondragend="dragEnd(event)">
+                    <article class="task" draggable="true" data-dia="${diaIdx}" data-tarefa="${tarefaIdx}" data-responsavel="${escapar(tarefa.responsavel || '')}" ondragstart="dragStart(event, ${diaIdx}, ${tarefaIdx})" ondragend="dragEnd(event)">
                         <div class="task-row">
                             <div class="task-text" contenteditable="true" onblur="atualizarTarefa(${diaIdx}, ${tarefaIdx}, this.innerText)">${escapar(tarefa.tarefa)}</div>
                         </div>
@@ -661,6 +686,8 @@
 
                 calendar.appendChild(section);
             });
+
+            aplicarFiltros();
         }
 
         function escapar(valor) {
@@ -830,15 +857,28 @@
         }
 
         function buscarTarefa() {
-            const termo = document.getElementById('searchInput').value.toLowerCase().trim();
-            document.querySelectorAll('.task.highlight').forEach(el => el.classList.remove('highlight'));
+            aplicarFiltros();
+        }
 
-            if (!termo) return;
+        function aplicarFiltros() {
+            const termo = document.getElementById('searchInput').value.toLowerCase().trim();
+            const responsavel = document.getElementById('responsavelFilter').value;
+            document.querySelectorAll('.task.highlight').forEach(el => el.classList.remove('highlight'));
 
             let encontrado = false;
             document.querySelectorAll('.task').forEach(task => {
                 const texto = task.querySelector('.task-text')?.innerText.toLowerCase() || '';
-                if (texto.includes(termo)) {
+                const taskResponsavel = task.dataset.responsavel || '';
+                const passaBusca = !termo || texto.includes(termo);
+                const passaResponsavel = !responsavel || taskResponsavel === responsavel || (responsavel === '_sem_responsavel' && !taskResponsavel);
+
+                if (passaBusca && passaResponsavel) {
+                    task.style.display = '';
+                } else {
+                    task.style.display = 'none';
+                }
+
+                if (termo && passaBusca && passaResponsavel) {
                     task.classList.add('highlight');
                     if (!encontrado) {
                         task.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -850,7 +890,84 @@
 
         function limparBusca() {
             document.getElementById('searchInput').value = '';
+            document.getElementById('responsavelFilter').value = '';
             document.querySelectorAll('.task.highlight').forEach(el => el.classList.remove('highlight'));
+            aplicarFiltros();
+        }
+
+        function gerarRelatorioIA() {
+            const agora = new Date().toLocaleString('pt-BR');
+            const contagemStatus = { pendente: 0, urgente: 0, atrasado: 0, andamento: 0, concluido: 0 };
+            const contagemResponsavel = { 'André': 0, 'Morgan': 0, 'Juarez': 0, 'Tavares': 0, 'Sem responsável': 0 };
+            let total = 0;
+
+            dados.forEach(dia => {
+                dia.tarefas.forEach(tarefa => {
+                    total++;
+                    contagemStatus[tarefa.status || 'pendente'] = (contagemStatus[tarefa.status || 'pendente'] || 0) + 1;
+                    contagemResponsavel[tarefa.responsavel || 'Sem responsável'] = (contagemResponsavel[tarefa.responsavel || 'Sem responsável'] || 0) + 1;
+                });
+            });
+
+            const concluidas = contagemStatus.concluido || 0;
+            const progresso = total ? Math.round((concluidas / total) * 100) : 0;
+            const linhasCronograma = dados.map(dia => {
+                const tarefas = dia.tarefas.map((tarefa, idx) => {
+                    const status = tarefa.status || 'pendente';
+                    const responsavel = tarefa.responsavel || 'Sem responsável';
+                    const horario = tarefa.horario ? ` [${tarefa.horario}]` : '';
+                    return `${idx + 1}. [${status}] [${responsavel}]${horario} ${tarefa.tarefa}`;
+                }).join('\n');
+                return `${dia.data}\n${tarefas || 'Sem tarefas cadastradas'}`;
+            }).join('\n\n');
+
+            return `Você é um gerente de produção de eventos, especialista em montagem de camarotes, cenografia, elétrica, hidráulica, fornecedores, bares, mobiliário e operação.
+
+Analise o cronograma abaixo considerando:
+- O evento começa em 29/05 às 19h.
+- Não pode haver margem de falha.
+- Priorize tarefas com dependência estrutural.
+- Identifique gargalos, riscos críticos, tarefas atrasadas e tarefas sem responsável.
+- Reorganize a ordem de execução por prioridade real de montagem.
+- Aponte o que precisa ser feito hoje, o que precisa ser feito nas próximas 24h e o que pode esperar.
+- Sugira responsáveis e horários quando fizer sentido.
+- Separe em: urgente, importante, pode esperar e risco crítico.
+- Gere também uma mensagem objetiva para enviar no grupo da equipe.
+
+RELATÓRIO GERAL - PLANEJAMENTO TREVO
+Data de geração: ${agora}
+Prazo final crítico: 29/05 às 19h
+Contexto: Montagem de camarote/evento. Não pode haver margem de falha.
+Progresso geral: ${progresso}%
+Total de tarefas: ${total}
+
+RESUMO POR STATUS:
+- Pendente: ${contagemStatus.pendente || 0}
+- Urgente: ${contagemStatus.urgente || 0}
+- Atrasado: ${contagemStatus.atrasado || 0}
+- Em andamento: ${contagemStatus.andamento || 0}
+- Concluído: ${contagemStatus.concluido || 0}
+
+RESUMO POR RESPONSÁVEL:
+- André: ${contagemResponsavel['André'] || 0}
+- Morgan: ${contagemResponsavel['Morgan'] || 0}
+- Juarez: ${contagemResponsavel['Juarez'] || 0}
+- Tavares: ${contagemResponsavel['Tavares'] || 0}
+- Sem responsável: ${contagemResponsavel['Sem responsável'] || 0}
+
+CRONOGRAMA POR DATA:
+
+${linhasCronograma}`;
+        }
+
+        async function copiarRelatorioIA() {
+            const relatorio = gerarRelatorioIA();
+            try {
+                await navigator.clipboard.writeText(relatorio);
+                alert('Relatório copiado! Cole na IA para receber a análise.');
+            } catch {
+                prompt('Copie o relatório abaixo:', relatorio);
+            }
         }
 
         function selecionarUsuario() {
