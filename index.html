@@ -193,8 +193,9 @@
         }
 
         .task.status-atrasado {
-            background: linear-gradient(0deg, rgba(237, 137, 54, 0.14), rgba(237, 137, 54, 0.14)), var(--task-bg);
-            border-color: rgba(237, 137, 54, 0.4);
+            background: linear-gradient(0deg, rgba(197, 48, 48, 0.32), rgba(197, 48, 48, 0.32)), var(--task-bg);
+            border-color: rgba(197, 48, 48, 0.75);
+            box-shadow: 0 0 14px rgba(197, 48, 48, 0.2);
         }
 
         .task.status-andamento {
@@ -509,6 +510,7 @@
         let dragDiaIdx = null;
         let dragTarefaIdx = null;
         let salvandoSupabase = false;
+        let alertaPiscando = false;
 
         const dadosIniciais = [
             { data: '16/05 (Sábado)', tarefas: [
@@ -713,6 +715,7 @@
             });
 
             aplicarFiltros();
+            atualizarAlertasAtrasados();
         }
 
         function escapar(valor) {
@@ -738,6 +741,14 @@
             dados[diaIdx].tarefas[tarefaIdx].status = valor;
             salvar();
             renderizar();
+        }
+
+        function atualizarAlertasAtrasados() {
+            document.querySelectorAll('.status').forEach(select => {
+                const option = select.querySelector('option[value="atrasado"]');
+                if (!option) return;
+                option.textContent = select.value === 'atrasado' && alertaPiscando ? '❗ Atrasado' : '⚠️ Atrasado';
+            });
         }
 
         function atualizarResponsavel(diaIdx, tarefaIdx, selectEl) {
@@ -1156,6 +1167,10 @@ ${linhasCronograma}`;
         renderizar();
         carregarSupabase();
         iniciarRealtime();
+        setInterval(() => {
+            alertaPiscando = !alertaPiscando;
+            atualizarAlertasAtrasados();
+        }, 800);
     </script>
 </body>
 </html>
