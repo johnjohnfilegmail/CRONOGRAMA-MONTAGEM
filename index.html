@@ -489,6 +489,7 @@
             <option value="_sem_responsavel">Sem responsável</option>
         </select>
         <button onclick="analisarComIA()" title="Gerar análise automática com IA">🤖 IA</button>
+        <button onclick="copiarStatusGeral()" title="Copiar status geral das tarefas">📋 Status</button>
         <button onclick="limparBusca()" title="Limpar">✕</button>
     </div>
 
@@ -1018,6 +1019,47 @@ ${linhasCronograma}`;
                 alert('Relatório copiado! Cole na IA para receber a análise.');
             } catch {
                 prompt('Copie o relatório abaixo:', relatorio);
+            }
+        }
+
+        function gerarStatusGeral() {
+            const agora = new Date().toLocaleString('pt-BR');
+            const linhas = [
+                'STATUS GERAL DAS TAREFAS - PLANEJAMENTO TREVO',
+                `Gerado em: ${agora}`,
+                'Organização: por dia, responsável, horário e status',
+                ''
+            ];
+
+            dados.forEach(dia => {
+                linhas.push(`## ${dia.data}`);
+
+                if (!dia.tarefas.length) {
+                    linhas.push('- Sem tarefas cadastradas');
+                    linhas.push('');
+                    return;
+                }
+
+                dia.tarefas.forEach((tarefa, idx) => {
+                    const horario = tarefa.horario ? ` | Horário: ${tarefa.horario}` : '';
+                    const responsavel = tarefa.responsavel || 'Sem responsável';
+                    const status = tarefa.status || 'pendente';
+                    linhas.push(`${idx + 1}. [${status}] [${responsavel}]${horario} - ${tarefa.tarefa}`);
+                });
+
+                linhas.push('');
+            });
+
+            return linhas.join('\n');
+        }
+
+        async function copiarStatusGeral() {
+            const statusGeral = gerarStatusGeral();
+            try {
+                await navigator.clipboard.writeText(statusGeral);
+                alert('Status geral copiado!');
+            } catch {
+                prompt('Copie o status geral abaixo:', statusGeral);
             }
         }
 
