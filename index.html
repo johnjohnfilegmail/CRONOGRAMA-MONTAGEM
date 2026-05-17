@@ -183,6 +183,30 @@
             box-shadow: 0 0 12px rgba(246, 224, 94, 0.5);
         }
 
+        .task.status-pendente {
+            background: var(--task-bg);
+        }
+
+        .task.status-urgente {
+            background: linear-gradient(0deg, rgba(229, 62, 62, 0.12), rgba(229, 62, 62, 0.12)), var(--task-bg);
+            border-color: rgba(229, 62, 62, 0.35);
+        }
+
+        .task.status-atrasado {
+            background: linear-gradient(0deg, rgba(237, 137, 54, 0.14), rgba(237, 137, 54, 0.14)), var(--task-bg);
+            border-color: rgba(237, 137, 54, 0.4);
+        }
+
+        .task.status-andamento {
+            background: linear-gradient(0deg, rgba(246, 224, 94, 0.16), rgba(246, 224, 94, 0.16)), var(--task-bg);
+            border-color: rgba(214, 158, 46, 0.35);
+        }
+
+        .task.status-concluido {
+            background: linear-gradient(0deg, rgba(56, 161, 105, 0.13), rgba(56, 161, 105, 0.13)), var(--task-bg);
+            border-color: rgba(56, 161, 105, 0.35);
+        }
+
         @keyframes pulse {
             0%, 100% { box-shadow: 0 0 4px rgba(246, 224, 94, 0.3); }
             50% { box-shadow: 0 0 16px rgba(246, 224, 94, 0.7); }
@@ -650,7 +674,7 @@
                 section.className = 'day';
 
                 const tarefas = dia.tarefas.map((tarefa, tarefaIdx) => `
-                    <article class="task" draggable="true" data-dia="${diaIdx}" data-tarefa="${tarefaIdx}" data-responsavel="${escapar(tarefa.responsavel || '')}" ondragstart="dragStart(event, ${diaIdx}, ${tarefaIdx})" ondragend="dragEnd(event)">
+                    <article class="task status-${escapar(tarefa.status || 'pendente')}" draggable="true" data-dia="${diaIdx}" data-tarefa="${tarefaIdx}" data-responsavel="${escapar(tarefa.responsavel || '')}" ondragstart="dragStart(event, ${diaIdx}, ${tarefaIdx})" ondragend="dragEnd(event)">
                         <div class="task-row">
                             <div class="task-text" contenteditable="true" onblur="atualizarTarefa(${diaIdx}, ${tarefaIdx}, this.innerText)">${escapar(tarefa.tarefa)}</div>
                         </div>
@@ -712,6 +736,7 @@
         function atualizarStatus(diaIdx, tarefaIdx, valor) {
             dados[diaIdx].tarefas[tarefaIdx].status = valor;
             salvar();
+            renderizar();
         }
 
         function atualizarResponsavel(diaIdx, tarefaIdx, selectEl) {
