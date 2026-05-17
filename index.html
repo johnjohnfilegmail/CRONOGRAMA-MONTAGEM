@@ -444,15 +444,21 @@
     </div>
 
     <main id="calendar" class="calendar"></main>
-
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
         const STORAGE_KEY = 'cronograma-montagem-simplificado-v2';
         const USUARIO_KEY = 'cronograma-usuario-atual';
         const TEMA_KEY = 'cronograma-tema';
+        const SUPABASE_URL = 'https://xorfmikxqmyischizdap.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_2lcPlg9nKDuVFh1EhVx2Ew_de06S8iX';
+        const SUPABASE_TABLE = 'cronograma';
+        const SUPABASE_ROW_ID = 'principal';
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         let usuarioAtual = localStorage.getItem(USUARIO_KEY) || '';
         let dragDiaIdx = null;
         let dragTarefaIdx = null;
+        let salvandoSupabase = false;
 
         const dadosIniciais = [
             { data: '16/05 (Sábado)', tarefas: [
@@ -537,6 +543,61 @@
 
         function salvar() {
             localStorage.setItem(STORAGE_KEY, JSON.stringify(dados));
+            salvarSupabase();
+        }
+
+        async function carregarSupabase() {
+            const { data, error } = await supabaseClient
+                .from(SUPABASE_TABLE)
+                .select('dados')
+                .eq('id', SUPABASE_ROW_ID)
+                .single();
+
+            if (error || !data?.dados) {
+                console.warn('Usando dados locais. Supabase não retornou dados:', error);
+                return;
+            }
+
+            dados = data.dados;
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(dados));
+            renderizar();
+        }
+
+        async function salvarSupabase() {
+            if (salvandoSupabase) return;
+            salvandoSupabase = true;
+
+            const { error } = await supabaseClient
+                .from(SUPABASE_TABLE)
+                .upsert({
+                    id: SUPABASE_ROW_ID,
+                    dados,
+                    updated_at: new Date().toISOString()
+                });
+
+            if (error) {
+                console.warn('Não foi possível salvar no Supabase:', error);
+            }
+
+            salvandoSupabase = false;
+        }
+
+        function iniciarRealtime() {
+            supabaseClient
+                .channel('cronograma-realtime')
+                .on('postgres_changes', {
+                    event: '*',
+                    schema: 'public',
+                    table: SUPABASE_TABLE
+                }, (payload) => {
+                    if (payload.new?.id !== SUPABASE_ROW_ID) return;
+                    if (!payload.new?.dados) return;
+
+                    dados = payload.new.dados;
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(dados));
+                    renderizar();
+                })
+                .subscribe();
         }
 
         function renderizar() {
@@ -824,6 +885,8 @@
         }
 
         renderizar();
+        carregarSupabase();
+        iniciarRealtime();
     </script>
 </body>
 </html>
