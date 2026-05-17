@@ -455,7 +455,7 @@
         const SUPABASE_ROW_ID = 'principal';
         const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        let usuarioAtual = localStorage.getItem(USUARIO_KEY) || '';
+        let usuarioAtual = localStorage.getItem(USUARIO_KEY) || 'Tavares';
         let dragDiaIdx = null;
         let dragTarefaIdx = null;
         let salvandoSupabase = false;
@@ -463,19 +463,35 @@
         const dadosIniciais = [
             { data: '16/05 (Sábado)', tarefas: [
                 { tarefa: 'Recebimento do projeto 3D', status: 'pendente' },
-                { tarefa: 'Conferir medidas e ajustes do layout', status: 'pendente' }
+                { tarefa: 'Conferir medidas e ajustes do layout', status: 'pendente' },
+                { tarefa: 'Envio dos ajustes necessários para edição do projeto + Arquivos em Vetor', status: 'pendente' },
+                { tarefa: 'Contato com possíveis patrocinadores, Larissa Madeira (Mastercard), Omoda Jaecco, Davi Fagundes (Avatim)', status: 'pendente' },
+                { tarefa: 'Planilha com contato de todos os fornecedores setorizados por tipo de entrega', status: 'pendente' },
+                { tarefa: 'Organização da planilha de tarefas futuras para o evento', status: 'pendente' }
             ] },
             { data: '17/05 (Domingo)', tarefas: [
-                { tarefa: 'Revisar necessidades de produção', status: 'pendente' }
+                { tarefa: 'Pagar de doido e perguntar no grupo se segunda já vão apresentar o 3D e já solicitar também o detalhamento das prioridades de execução', status: 'pendente', horario: '10:00' },
+                { tarefa: 'Mapear novos fornecedores, entrar em contato com os que já tiver, procurar pessoas pra suporte na montagem do evento', status: 'pendente' },
+                { tarefa: 'Confirmar medida executada da estrutura de box struss (18m ou 16m?)', status: 'pendente' },
+                { tarefa: 'Cardápio do evento', status: 'pendente' },
+                { tarefa: 'Entender como ativar a Valor dentro do espaço do evento', status: 'pendente' },
+                { tarefa: 'Confirmar o momento em que o Dry Wall vai estar executado', status: 'pendente' },
+                { tarefa: 'HISTÓRICO DE COMPRAS MERCADO LIVRE - DESCARTÁVEIS', status: 'pendente' }
             ] },
             { data: '18/05 (Segunda)', tarefas: [
-                { tarefa: 'Fechar lista de materiais', status: 'pendente' },
-                { tarefa: 'Alinhar fornecedores principais', status: 'pendente' }
+                { tarefa: 'Cobrar Detalhamento Arquitetos', status: 'pendente', horario: '08:00' },
+                { tarefa: 'Contactar Fornecedores', status: 'pendente' },
+                { tarefa: 'Cobrar Retorno: Heineken, Pernod, Diageo, Red Bull, Ballena + Outros possíveis patrocinadores)', status: 'pendente' },
+                { tarefa: 'Compra bancos de plastico, Espelho Concavo, Shimmer, Portas Sanfonadas', status: 'pendente' },
+                { tarefa: 'Entender quantidade de bandeirolas e mandar fazer', status: 'pendente' },
+                { tarefa: 'MANDAR INSTALAR PONTO DE ENERGIA NO LOCAL', status: 'pendente' },
+                { tarefa: 'MANDAR INSTALAR PONTO DE ÁGUA NO LOCAL', status: 'pendente' },
+                { tarefa: 'ALUGAR MOBILIA DE DESCANSO NA ACCERVO', status: 'pendente' }
             ] },
             { data: '19/05 (Terça)', tarefas: [
                 { tarefa: 'Pré-produção e compras pendentes', status: 'pendente' }
             ] },
-            { data: '20/05 (Quarta)', tarefas: [
+            { data: '20/05 -  (Quarta) Dry Wall realizado?', tarefas: [
                 { tarefa: 'Ligação de energia geral', status: 'pendente' },
                 { tarefa: 'Ligação de água e esgoto dos banheiros', status: 'pendente' },
                 { tarefa: 'Início do cabeamento elétrico interno', status: 'pendente' },
