@@ -549,6 +549,7 @@
     </header>
 
     <div class="search-bar">
+        <button onclick="organizarTarefasPorStatus()" title="Organizar tarefas por status">↕️ Organizar</button>
         <input id="searchInput" type="text" placeholder="🔍 Buscar tarefa..." oninput="buscarTarefa()">
         <select id="responsavelFilter" onchange="aplicarFiltros()" title="Filtrar por responsável">
             <option value="">Filtrar: Todos</option>
@@ -1009,6 +1010,12 @@
 
         function buscarTarefa() {
             aplicarFiltros();
+        }
+
+        function organizarTarefasPorStatus() {
+            dados.forEach((_, diaIdx) => ordenarTarefasPorPrioridade(diaIdx));
+            salvar();
+            renderizar();
         }
 
         function aplicarFiltros() {
