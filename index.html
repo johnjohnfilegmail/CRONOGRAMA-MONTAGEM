@@ -745,6 +745,8 @@
             calendar.innerHTML = '';
 
             dados.forEach((dia, diaIdx) => {
+                ordenarTarefasPorPrioridade(diaIdx);
+
                 const section = document.createElement('section');
                 section.className = 'day';
 
@@ -810,14 +812,8 @@
         }
 
         function atualizarStatus(diaIdx, tarefaIdx, valor) {
-            const tarefa = dados[diaIdx].tarefas[tarefaIdx];
-            tarefa.status = valor;
-
-            if (valor === 'concluido') {
-                dados[diaIdx].tarefas.splice(tarefaIdx, 1);
-                dados[diaIdx].tarefas.push(tarefa);
-            }
-
+            dados[diaIdx].tarefas[tarefaIdx].status = valor;
+            ordenarTarefasPorPrioridade(diaIdx);
             salvar();
             renderizar();
         }
@@ -848,13 +844,26 @@
 
         function atualizarHorario(diaIdx, tarefaIdx, valor) {
             dados[diaIdx].tarefas[tarefaIdx].horario = valor.trim();
-            ordenarTarefasPorHorario(diaIdx);
+            ordenarTarefasPorPrioridade(diaIdx);
             salvar();
             renderizar();
         }
 
-        function ordenarTarefasPorHorario(diaIdx) {
+        function ordenarTarefasPorPrioridade(diaIdx) {
+            const prioridade = {
+                atrasado: 0,
+                urgente: 1,
+                andamento: 2,
+                pendente: 3,
+                concluido: 4
+            };
+
             dados[diaIdx].tarefas.sort((a, b) => {
+                const prioridadeA = prioridade[a.status || 'pendente'] ?? 3;
+                const prioridadeB = prioridade[b.status || 'pendente'] ?? 3;
+
+                if (prioridadeA !== prioridadeB) return prioridadeA - prioridadeB;
+
                 const minA = horarioParaMinutos(a.horario);
                 const minB = horarioParaMinutos(b.horario);
 
