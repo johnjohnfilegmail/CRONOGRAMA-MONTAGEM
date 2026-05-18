@@ -553,9 +553,9 @@
         <select id="responsavelFilter" onchange="aplicarFiltros()" title="Filtrar por responsável">
             <option value="">Filtrar: Todos</option>
             <option value="André">🦾 André</option>
-            <option value="Morgan">🕷️ Morgan</option>
+            <option value="Morgan">� Morgan</option>
             <option value="Juarez">🥷 Juarez</option>
-            <option value="Tavares">💪 Tavares</option>
+            <option value="Tavares">🧗‍♂️ Tavares</option>
             <option value="_sem_responsavel">Sem responsável</option>
         </select>
         <button onclick="abrirRascunho()" title="Abrir bloco de notas da equipe">📝 Rascunho</button>
@@ -764,9 +764,9 @@
                             <select class="responsavel resp-${tarefa.responsavel || ''}" onclick="event.stopPropagation()" onmousedown="event.stopPropagation()" ontouchstart="event.stopPropagation()" onchange="atualizarResponsavel(${diaIdx}, ${tarefaIdx}, this)" title="Responsável">
                                 <option value="" ${!tarefa.responsavel ? 'selected' : ''}>Resp.</option>
                                 <option value="André" ${tarefa.responsavel === 'André' ? 'selected' : ''}>🦾 André</option>
-                                <option value="Morgan" ${tarefa.responsavel === 'Morgan' ? 'selected' : ''}>🕷️ Morgan</option>
+                                <option value="Morgan" ${tarefa.responsavel === 'Morgan' ? 'selected' : ''}>� Morgan</option>
                                 <option value="Juarez" ${tarefa.responsavel === 'Juarez' ? 'selected' : ''}>🥷 Juarez</option>
-                                <option value="Tavares" ${tarefa.responsavel === 'Tavares' ? 'selected' : ''}>💪 Tavares</option>
+                                <option value="Tavares" ${tarefa.responsavel === 'Tavares' ? 'selected' : ''}>🧗‍♂️ Tavares</option>
                             </select>
                             <input class="horario" type="text" value="${escapar(tarefa.horario || '')}" onclick="event.stopPropagation()" onmousedown="event.stopPropagation()" ontouchstart="event.stopPropagation()" oninput="formatarHorario(this)" onblur="atualizarHorario(${diaIdx}, ${tarefaIdx}, this.value)" placeholder="00:00" maxlength="5" title="Horário">
                             <button class="delete" type="button" onclick="event.stopPropagation(); deletarTarefa(${diaIdx}, ${tarefaIdx})">×</button>
@@ -810,7 +810,14 @@
         }
 
         function atualizarStatus(diaIdx, tarefaIdx, valor) {
-            dados[diaIdx].tarefas[tarefaIdx].status = valor;
+            const tarefa = dados[diaIdx].tarefas[tarefaIdx];
+            tarefa.status = valor;
+
+            if (valor === 'concluido') {
+                dados[diaIdx].tarefas.splice(tarefaIdx, 1);
+                dados[diaIdx].tarefas.push(tarefa);
+            }
+
             salvar();
             renderizar();
         }
@@ -1170,9 +1177,9 @@ ${linhasCronograma}`;
 
             const pessoas = [
                 { nome: 'André', icone: '🦾' },
-                { nome: 'Morgan', icone: '🕷️' },
+                { nome: 'Morgan', icone: '�' },
                 { nome: 'Juarez', icone: '🥷' },
-                { nome: 'Tavares', icone: '💪' }
+                { nome: 'Tavares', icone: '🧗‍♂️' }
             ];
 
             const blocos = pessoas.map(pessoa => `
@@ -1252,7 +1259,7 @@ ${linhasCronograma}`;
             overlay.className = 'modal-overlay';
             overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
 
-            const icones = { 'André': '🦾', 'Tavares': '💪', 'Juarez': '🥷', 'Morgan': '🕷️' };
+            const icones = { 'André': '🦾', 'Tavares': '🧗‍♂️', 'Juarez': '🥷', 'Morgan': '�' };
             const responsaveis = ['André', 'Morgan', 'Juarez', 'Tavares'];
             const botoes = responsaveis.map(r => `
                 <button style="display:block;width:100%;margin-bottom:6px;padding:10px;border:1px solid var(--border);border-radius:8px;background:#f7fafc;cursor:pointer;font-size:0.9rem;text-align:left" onclick="definirUsuario('${r}')">${icones[r]} ${r}</button>
@@ -1277,7 +1284,7 @@ ${linhasCronograma}`;
         }
 
         function iconeUsuario(nome) {
-            const map = { 'André': '🦾', 'Tavares': '💪', 'Juarez': '🥷', 'Morgan': '🕷️' };
+            const map = { 'André': '🦾', 'Tavares': '🧗‍♂️', 'Juarez': '🥷', 'Morgan': '�' };
             return map[nome] || '👤';
         }
 
