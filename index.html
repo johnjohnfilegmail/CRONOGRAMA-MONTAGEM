@@ -278,6 +278,20 @@
             border-radius: 7px;
             padding: 3px 4px;
             cursor: text;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            word-break: break-word;
+        }
+
+        .task-text.expanded,
+        .task-text:focus {
+            -webkit-line-clamp: unset;
+            line-clamp: unset;
+            overflow: visible;
+            display: block;
         }
 
         .status {
