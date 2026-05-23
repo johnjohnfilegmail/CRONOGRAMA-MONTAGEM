@@ -127,7 +127,8 @@
         }
 
         .add-task,
-        .trash-btn {
+        .trash-btn,
+        .archive-day-btn {
             width: 28px;
             height: 28px;
             border: 1px solid #fbd38d;
@@ -145,6 +146,11 @@
         .trash-btn.has-trash {
             border-color: var(--danger);
             color: var(--danger);
+        }
+
+        .archive-day-btn {
+            border-color: #cbd5e0;
+            color: var(--muted);
         }
 
         .tasks {
@@ -288,12 +294,12 @@
             appearance: none;
         }
 
-        .delete {
+        .delete,
+        .archive-task {
             width: 18px;
             height: 18px;
             border: 1px solid var(--border);
             background: var(--control-bg);
-            color: var(--danger);
             border-radius: 4px;
             cursor: pointer;
             font-size: 0.65rem;
@@ -303,8 +309,20 @@
             justify-content: center;
         }
 
+        .delete {
+            color: var(--danger);
+        }
+
+        .archive-task {
+            color: var(--muted);
+        }
+
         .delete:hover {
             background: #fed7d7;
+        }
+
+        .archive-task:hover {
+            background: var(--day-head-bg);
         }
 
         .modal-overlay {
@@ -550,6 +568,8 @@
 
     <div class="search-bar">
         <button onclick="organizarTarefasPorStatus()" title="Organizar tarefas por status">↕️ Organizar</button>
+        <button onclick="abrirArquivados()" title="Revisitar dias arquivados">🗄️ Arquivados</button>
+        <button onclick="apagarDiasAnteriores()" title="Apagar dias anteriores a hoje">🧹 Apagar anteriores</button>
         <input id="searchInput" type="text" placeholder="🔍 Buscar tarefa..." oninput="buscarTarefa()">
         <select id="responsavelFilter" onchange="aplicarFiltros()" title="Filtrar por responsável">
             <option value="">Filtrar: Todos</option>
@@ -572,6 +592,7 @@
         const USUARIO_KEY = 'cronograma-usuario-atual';
         const TEMA_KEY = 'cronograma-tema';
         const RASCUNHO_KEY = 'cronograma-rascunho-equipe';
+        const ARQUIVADOS_KEY = 'cronograma-arquivados';
         const SUPABASE_URL = 'https://xorfmikxqmyischizdap.supabase.co';
         const SUPABASE_KEY = 'sb_publishable_2lcPlg9nKDuVFh1EhVx2Ew_de06S8iX';
         const SUPABASE_TABLE = 'cronograma';
@@ -584,6 +605,7 @@
         let salvandoSupabase = false;
         let alertaPiscando = false;
         let rascunhos = carregarRascunhos();
+        let arquivados = carregarArquivados();
 
         const dadosIniciais = [
             { data: '16/05 (Sábado)', tarefas: [
@@ -682,8 +704,20 @@
             return JSON.parse(JSON.stringify(valor));
         }
 
+        function carregarArquivados() {
+            const salvo = localStorage.getItem(ARQUIVADOS_KEY);
+            if (!salvo) return [];
+
+            try {
+                return JSON.parse(salvo);
+            } catch {
+                return [];
+            }
+        }
+
         function salvar() {
             localStorage.setItem(STORAGE_KEY, JSON.stringify(dados));
+            localStorage.setItem(ARQUIVADOS_KEY, JSON.stringify(arquivados));
             salvarSupabase();
         }
 
@@ -772,6 +806,7 @@
                                 <option value="Tavares" ${tarefa.responsavel === 'Tavares' ? 'selected' : ''}>🧗‍♂️ Tavares</option>
                             </select>
                             <input class="horario" type="text" value="${escapar(tarefa.horario || '')}" onclick="event.stopPropagation()" onmousedown="event.stopPropagation()" ontouchstart="event.stopPropagation()" oninput="formatarHorario(this)" onblur="atualizarHorario(${diaIdx}, ${tarefaIdx}, this.value)" placeholder="00:00" maxlength="5" title="Horário">
+                            <button class="archive-task" type="button" onclick="event.stopPropagation(); arquivarTarefa(${diaIdx}, ${tarefaIdx})" title="Arquivar tarefa">🗄️</button>
                             <button class="delete" type="button" onclick="event.stopPropagation(); deletarTarefa(${diaIdx}, ${tarefaIdx})">×</button>
                         </div>
                     </article>
@@ -780,6 +815,7 @@
                 section.innerHTML = `
                     <div class="day-head">
                         <button class="trash-btn${(dia.lixeira && dia.lixeira.length) ? ' has-trash' : ''}" type="button" onclick="abrirLixeira(${diaIdx})" title="Lixeira">🗑️</button>
+                        <button class="archive-day-btn" type="button" onclick="arquivarDia(${diaIdx})" title="Arquivar dia">🗄️</button>
                         <div class="day-title" contenteditable="true" onblur="atualizarDia(${diaIdx}, this.innerText)">${escapar(dia.data)}</div>
                         <button class="add-task" type="button" onclick="adicionarTarefa(${diaIdx})">+</button>
                     </div>
@@ -890,6 +926,102 @@
         function adicionarTarefa(diaIdx) {
             dados[diaIdx].tarefas.push({ tarefa: 'Nova tarefa', status: 'pendente', responsavel: '', horario: '' });
             salvar();
+            renderizar();
+        }
+
+        function extrairDataDia(texto) {
+            const match = String(texto || '').match(/(\d{1,2})\/(\d{1,2})/);
+            if (!match) return null;
+
+            const hoje = new Date();
+            const data = new Date(hoje.getFullYear(), Number(match[2]) - 1, Number(match[1]));
+            data.setHours(0, 0, 0, 0);
+            return data;
+        }
+
+        function apagarDiasAnteriores() {
+            const hoje = new Date();
+            hoje.setHours(0, 0, 0, 0);
+
+            const anteriores = dados.filter(dia => {
+                const dataDia = extrairDataDia(dia.data);
+                return dataDia && dataDia < hoje;
+            });
+
+            if (anteriores.length === 0) {
+                alert('Não há dias anteriores para apagar.');
+                return;
+            }
+
+            const lista = anteriores.map(dia => `• ${dia.data}`).join('\n');
+            if (!confirm(`Deseja apagar ${anteriores.length} dia(s) anterior(es)?\n\n${lista}`)) return;
+
+            dados = dados.filter(dia => {
+                const dataDia = extrairDataDia(dia.data);
+                return !dataDia || dataDia >= hoje;
+            });
+            salvar();
+            renderizar();
+        }
+
+        function arquivarDia(diaIdx) {
+            const dia = dados.splice(diaIdx, 1)[0];
+            dia._arquivadoPor = usuarioAtual || 'Desconhecido';
+            dia._arquivadoEm = new Date().toLocaleString('pt-BR');
+            arquivados.push(dia);
+            salvar();
+            renderizar();
+        }
+
+        function arquivarTarefa(diaIdx, tarefaIdx) {
+            const tarefa = dados[diaIdx].tarefas.splice(tarefaIdx, 1)[0];
+            arquivados.push({
+                data: dados[diaIdx].data,
+                tarefas: [tarefa],
+                _arquivadoPor: usuarioAtual || 'Desconhecido',
+                _arquivadoEm: new Date().toLocaleString('pt-BR')
+            });
+            salvar();
+            renderizar();
+        }
+
+        function abrirArquivados() {
+            const overlay = document.createElement('div');
+            overlay.className = 'modal-overlay';
+            overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
+
+            let itensHtml = '';
+            if (arquivados.length === 0) {
+                itensHtml = '<div class="trash-empty">Nenhum dia arquivado</div>';
+            } else {
+                itensHtml = arquivados.map((dia, i) => `
+                    <div class="trash-item">
+                        <span class="trash-item-text"><strong>${escapar(dia.data)}</strong><br><small style="color:var(--muted)">${(dia.tarefas || []).length} tarefa(s)${dia._arquivadoPor ? ` · Arquivado por: ${escapar(dia._arquivadoPor)}` : ''}</small></span>
+                        <div class="trash-item-actions">
+                            <button class="trash-restore" onclick="restaurarArquivado(${i})">↩</button>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            overlay.innerHTML = `
+                <div class="modal">
+                    <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">✕</button>
+                    <h2>🗄️ Arquivados</h2>
+                    ${itensHtml}
+                </div>
+            `;
+
+            document.body.appendChild(overlay);
+        }
+
+        function restaurarArquivado(arquivadoIdx) {
+            const dia = arquivados.splice(arquivadoIdx, 1)[0];
+            delete dia._arquivadoPor;
+            delete dia._arquivadoEm;
+            dados.push(dia);
+            salvar();
+            document.querySelector('.modal-overlay').remove();
             renderizar();
         }
 
