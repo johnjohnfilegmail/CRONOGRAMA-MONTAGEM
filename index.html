@@ -788,7 +788,7 @@
                 const tarefas = dia.tarefas.map((tarefa, tarefaIdx) => `
                     <article class="task status-${escapar(tarefa.status || 'pendente')}" draggable="true" data-dia="${diaIdx}" data-tarefa="${tarefaIdx}" data-responsavel="${escapar(tarefa.responsavel || '')}" ondragstart="dragStart(event, ${diaIdx}, ${tarefaIdx})" ondragend="dragEnd(event)">
                         <div class="task-row">
-                            <div class="task-text" contenteditable="true" onblur="atualizarTarefa(${diaIdx}, ${tarefaIdx}, this.innerText)">${escapar(tarefa.tarefa)}</div>
+                            <div class="task-text" contenteditable="true" onkeydown="atalhoEditor(event)" onblur="atualizarTarefa(${diaIdx}, ${tarefaIdx}, this.innerHTML)">${formatarTextoEditavel(tarefa.tarefa)}</div>
                         </div>
                         <div class="task-controls">
                             <select class="status" onclick="event.stopPropagation()" onmousedown="event.stopPropagation()" ontouchstart="event.stopPropagation()" onchange="atualizarStatus(${diaIdx}, ${tarefaIdx}, this.value)" title="Status">
@@ -816,7 +816,7 @@
                     <div class="day-head">
                         <button class="trash-btn${(dia.lixeira && dia.lixeira.length) ? ' has-trash' : ''}" type="button" onclick="abrirLixeira(${diaIdx})" title="Lixeira">🗑️</button>
                         <button class="archive-day-btn" type="button" onclick="arquivarDia(${diaIdx})" title="Arquivar dia">🗄️</button>
-                        <div class="day-title" contenteditable="true" onblur="atualizarDia(${diaIdx}, this.innerText)">${escapar(dia.data)}</div>
+                        <div class="day-title" contenteditable="true" onkeydown="atalhoEditor(event)" onblur="atualizarDia(${diaIdx}, this.innerHTML)">${formatarTextoEditavel(dia.data)}</div>
                         <button class="add-task" type="button" onclick="adicionarTarefa(${diaIdx})">+</button>
                     </div>
                     <div class="tasks" ondragover="dragOver(event)" ondragleave="dragLeave(event)" ondrop="drop(event, ${diaIdx})">${tarefas}</div>
@@ -838,13 +838,55 @@
                 .replace(/'/g, '&#039;');
         }
 
+        function formatarTextoEditavel(valor) {
+            return sanitizarTextoEditavel(String(valor || ''));
+        }
+
+        function sanitizarTextoEditavel(html) {
+            const template = document.createElement('template');
+            template.innerHTML = String(html || '');
+
+            const limpar = (node) => {
+                [...node.childNodes].forEach(child => {
+                    if (child.nodeType === Node.TEXT_NODE) return;
+                    if (child.nodeType !== Node.ELEMENT_NODE) {
+                        child.remove();
+                        return;
+                    }
+
+                    limpar(child);
+                    const tag = child.tagName.toLowerCase();
+                    if (tag === 'b' || tag === 'strong') {
+                        const strong = document.createElement('strong');
+                        strong.innerHTML = child.innerHTML;
+                        child.replaceWith(strong);
+                        return;
+                    }
+
+                    if (tag === 'br') return;
+
+                    child.replaceWith(...child.childNodes);
+                });
+            };
+
+            limpar(template.content);
+            return template.innerHTML.trim();
+        }
+
+        function atalhoEditor(event) {
+            if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'b') {
+                event.preventDefault();
+                document.execCommand('bold');
+            }
+        }
+
         function atualizarDia(diaIdx, valor) {
-            dados[diaIdx].data = valor.trim() || 'Novo dia';
+            dados[diaIdx].data = sanitizarTextoEditavel(valor) || 'Novo dia';
             salvar();
         }
 
         function atualizarTarefa(diaIdx, tarefaIdx, valor) {
-            dados[diaIdx].tarefas[tarefaIdx].tarefa = valor.trim();
+            dados[diaIdx].tarefas[tarefaIdx].tarefa = sanitizarTextoEditavel(valor);
             salvar();
         }
 
